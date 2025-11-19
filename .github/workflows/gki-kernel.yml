@@ -579,16 +579,16 @@ jobs:
           cp scripts/setlocalversion scripts/setlocalversion.original
 
           # 创建新的 setlocalversion，强制返回原厂版本字符串
-          cat > scripts/setlocalversion << 'SETLOCALVERSION_EOF'
-#!/bin/sh
-# SPDX-License-Identifier: GPL-2.0
-#
-# 🎭 伪装成 Pixel 6 原厂内核版本
-# 原厂: 5.10.157-android13-4-00003-g776d0a76f6aa-ab10208116
-#
-# 强制返回原厂版本字符串，忽略所有 git 信息
-echo "-android13-4-00003-g776d0a76f6aa-ab10208116"
-SETLOCALVERSION_EOF
+          cat > scripts/setlocalversion << 'EOF_SETLOCALVERSION'
+          #!/bin/sh
+          # SPDX-License-Identifier: GPL-2.0
+          #
+          # 伪装成 Pixel 6 原厂内核版本
+          # 原厂: 5.10.157-android13-4-00003-g776d0a76f6aa-ab10208116
+          #
+          # 强制返回原厂版本字符串，忽略所有 git 信息
+          echo "-android13-4-00003-g776d0a76f6aa-ab10208116"
+          EOF_SETLOCALVERSION
 
           chmod +x scripts/setlocalversion
 
