@@ -74,7 +74,7 @@ jobs:
           remove-swapfile: 'true'        # Frees ~4 GB
           remove-cached-tools: 'false'   # Avoid unless confirmed safe
           verbose: 'true'                # Enable detailed logging
-          
+
       - name: 设定 CONFIG 环境变量
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -160,7 +160,7 @@ jobs:
           git clone https://github.com/Tools-cx-app/kernel_patches.git
           # Sukisu的补丁仓库
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
-          
+
       - name: 设置 CONFIG 环境变量
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -216,12 +216,12 @@ jobs:
           echo '补丁加入构建'
           echo "obj-y += hmbird_patch.o" >> Makefile
           tail -n 3 Makefile
-      
+
       - name: 确定 KernelSU 的分支
         run: |
           branch_input="${{ inputs.kernelsu_branch }}"
           variant_input="${{ inputs.kernelsu_variant }}"
-          
+
           case "$branch_input" in
             "Stable(标准)")
               echo "BRANCH=-s susfs-main" >> $GITHUB_ENV
@@ -231,7 +231,7 @@ jobs:
                 "Official" | "MKSU") echo "BRANCH=-s main" >> $GITHUB_ENV ;;
                 "Next")              echo "BRANCH=-s next-susfs-dev" >> $GITHUB_ENV ;;
                 "SukiSU")           echo "BRANCH=-s susfs-test" >> $GITHUB_ENV ;;
-                *) 
+                *)
                   echo "错误：未定义开发分支的变体 '$variant_input'" >&2
                   exit 1
                   ;;
@@ -267,20 +267,20 @@ jobs:
         run: |
           echo "更改为配置目录: $CONFIG..."
           cd "$CONFIG/common"
-          
+
           echo "下载并运行 Baseband-guard setup 脚本..."
           wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-          
+
           echo "启用 Baseband-guard 内核配置..."
           CONFIG_FILE="arch/arm64/configs/gki_defconfig"
           echo "CONFIG_BBG=y" >> "$CONFIG_FILE"
-          
+
           # 对于 GitHub Actions 云编译，修改 LSM Kconfig
           echo "修改 security/Kconfig 以包含 baseband_guard..."
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' ./security/Kconfig
-          
+
           echo "Baseband-guard 配置完成"
-          
+
       - name: 为 KernelSU 变体安装 SUSFS 补丁
         run: |
           echo "更改为配置目录: $CONFIG..."
@@ -301,7 +301,7 @@ jobs:
           elif [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
           #   echo "Applying SUSFS patches for KernelSU-Next..."
              cd ./KernelSU-Next
-          #   curl -LSs https://github.com/zzh20188/GKI_KernelSU_SUSFS/raw/refs/heads/dev/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch -o susfs.patch 
+          #   curl -LSs https://github.com/zzh20188/GKI_KernelSU_SUSFS/raw/refs/heads/dev/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch -o susfs.patch
           #   patch -p1 --forward < susfs.patch
 
           # #   cp ../../kernel_patches/next/kernel-patch-susfs-v1.5.7-to-KernelSU-Next.patch ./
@@ -356,7 +356,7 @@ jobs:
               fake_patched=1
             fi
           fi
-          
+
           if [ "$FORMATTED_BRANCH" = "android12-5.10" ] || [ "$FORMATTED_BRANCH" = "android13-5.10" ] || [ "$FORMATTED_BRANCH" = "android13-5.15" ]; then
             if ! grep -qxF $'\tif (!vma_pages(vma))' ./fs/proc/task_mmu.c; then
               echo "未找到 vma_pages,正在进行补丁修复"
@@ -370,14 +370,14 @@ jobs:
                 sed -i -e '/unsigned int nr_subpages \= __PAGE_SIZE \/ PAGE_SIZE;/d' -e '/pagemap_entry_t \*res = NULL;/d' ./fs/proc/task_mmu.c
               fi
             fi
-            
+
             if [ "$FORMATTED_BRANCH" = "android12-5.10" ] || [ "$FORMATTED_BRANCH" = "android13-5.10" ] || [ "$FORMATTED_BRANCH" = "android13-5.15" ]; then
               if grep -qxF $'\t\tgoto show_pad;' ./fs/proc/task_mmu.c; then
                 sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
               fi
             fi
           fi
-  
+
       - name: 应用新的HOOKS补丁
         run: |
           echo "更改为配置目录: $CONFIG..."
@@ -479,7 +479,7 @@ jobs:
           CONFIG_FILE="$CONFIG/common/arch/arm64/configs/gki_defconfig"
           echo "Changing to configuration directory: $CONFIG_FILE..."
           echo "CONFIG_DEFAULT_BBR=y" >> "$CONFIG_FILE"
-           
+
       - name: 添加SUSFS配置设置
         run: |
           echo "更改为配置目录: $CONFIG..."
@@ -498,7 +498,7 @@ jobs:
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
           fi
-          
+
           # Add additional tmpfs config setting
           echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -535,27 +535,132 @@ jobs:
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          
+
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
+
+      - name: 🎭 伪装成 Pixel 6 原厂内核版本
+        run: |
+          echo "=================================================="
+          echo "🎯 开始伪装成原厂内核: 5.10.157-android13-4-00003-g776d0a76f6aa-ab10208116"
+          echo "=================================================="
+
+          cd "$CONFIG/common"
+
+          # ========================================
+          # 1. 修改 Makefile SUBLEVEL (强制版本号为 5.10.157)
+          # ========================================
+          echo "📝 Step 1: 修改 Makefile SUBLEVEL"
+
+          # 获取当前 SUBLEVEL
+          CURRENT_SUBLEVEL=$(grep '^SUBLEVEL =' Makefile | awk '{print $3}')
+          echo "  当前 SUBLEVEL: $CURRENT_SUBLEVEL"
+
+          # 修改为 157 (Pixel 6 原厂版本)
+          sed -i 's/^SUBLEVEL = .*/SUBLEVEL = 157/' Makefile
+
+          # 验证修改
+          NEW_SUBLEVEL=$(grep '^SUBLEVEL =' Makefile | awk '{print $3}')
+          echo "  修改后 SUBLEVEL: $NEW_SUBLEVEL"
+
+          if [ "$NEW_SUBLEVEL" != "157" ]; then
+            echo "❌ 错误: SUBLEVEL 修改失败"
+            exit 1
+          fi
+
+          echo "✅ SUBLEVEL 修改成功: $CURRENT_SUBLEVEL -> 157"
+
+          # ========================================
+          # 2. 替换 setlocalversion 脚本
+          # ========================================
+          echo "📝 Step 2: 替换 setlocalversion 脚本"
+
+          # 备份原始脚本
+          cp scripts/setlocalversion scripts/setlocalversion.original
+
+          # 创建新的 setlocalversion，强制返回原厂版本字符串
+          cat > scripts/setlocalversion << 'SETLOCALVERSION_EOF'
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+#
+# 🎭 伪装成 Pixel 6 原厂内核版本
+# 原厂: 5.10.157-android13-4-00003-g776d0a76f6aa-ab10208116
+#
+# 强制返回原厂版本字符串，忽略所有 git 信息
+echo "-android13-4-00003-g776d0a76f6aa-ab10208116"
+SETLOCALVERSION_EOF
+
+          chmod +x scripts/setlocalversion
+
+          # 验证脚本
+          LOCALVERSION_OUTPUT=$(scripts/setlocalversion)
+          echo "  setlocalversion 输出: $LOCALVERSION_OUTPUT"
+
+          if [ "$LOCALVERSION_OUTPUT" != "-android13-4-00003-g776d0a76f6aa-ab10208116" ]; then
+            echo "❌ 错误: setlocalversion 输出不正确"
+            exit 1
+          fi
+
+          echo "✅ setlocalversion 脚本替换成功"
+
+          # ========================================
+          # 3. 设置编译环境变量 (伪装编译信息)
+          # ========================================
+          echo "📝 Step 3: 设置编译环境变量"
+
+          # 原厂编译信息:
+          # (build-user@build-host)
+          # #1 SMP PREEMPT Thu May 25 12:11:12 UTC 2023
+
+          echo "KBUILD_BUILD_USER=build-user" >> "$GITHUB_ENV"
+          echo "KBUILD_BUILD_HOST=build-host" >> "$GITHUB_ENV"
+          echo "KBUILD_BUILD_TIMESTAMP=Thu May 25 12:11:12 UTC 2023" >> "$GITHUB_ENV"
+
+          echo "  BUILD_USER: build-user"
+          echo "  BUILD_HOST: build-host"
+          echo "  BUILD_TIMESTAMP: Thu May 25 12:11:12 UTC 2023"
+          echo "✅ 编译环境变量设置成功"
+
+          # ========================================
+          # 验证最终版本
+          # ========================================
+          echo "=================================================="
+          echo "✅ 伪装配置完成！"
+          echo "=================================================="
+          echo "内核版本信息:"
+          echo "  VERSION.PATCHLEVEL.SUBLEVEL:"
+          grep -E "^(VERSION|PATCHLEVEL|SUBLEVEL)" Makefile | tr '\n' '.' | sed 's/\.$//'
+          echo ""
+          echo "  LOCALVERSION: -android13-4-00003-g776d0a76f6aa-ab10208116"
+          echo "  BUILD_USER: build-user"
+          echo "  BUILD_HOST: build-host"
+          echo "  BUILD_TIMESTAMP: Thu May 25 12:11:12 UTC 2023"
+          echo ""
+          echo "完整版本字符串:"
+          echo "  5.10.157-android13-4-00003-g776d0a76f6aa-ab10208116"
+          echo ""
+          echo "uname -r 输出将与 Pixel 6 原厂完全一致！"
+          echo "=================================================="
 
       - name: 配置内核名称
         run: |
           echo "更改为配置目录: $CONFIG..."
           cd "$CONFIG"
-          
-          if [ ! -z ${{ inputs.version }} ]; then
-            echo "版本号不为空"
-            sed -i '$s|echo "\$res"|echo "${{ inputs.version }}"|' ./common/scripts/setlocalversion
-          else
-            echo "版本号为空，使用默认值"
-            sed -i '$s|echo "\$res"|echo "\$res-zakozakoooooo-1145141919"|' ./common/scripts/setlocalversion
-          fi
 
-          # 如果你需要改构建时间,请把以下变量 CURRENT_TIME 修改为如下例子字符串,如:CURRENT_TIME="Sat Jun 07 06:29:29 UTC 2025"
-          # 该字符串表示 UTC时间: 2025年6月7日 06:29:29,"Sat" 是星期六的缩写，而 "Jun" 是六月的缩写
-          # 如果你想使用北京时间应为:CURRENT_TIME="Sat Jun 07 14:29:29 CST 2025"
-          CURRENT_TIME=$(date -u +"%a %b %d %H:%M:%S UTC %Y")
+          # 🎭 注意: setlocalversion 已经在前面的步骤中被替换
+          # 这里不再修改 setlocalversion，保持原厂版本字符串
+          echo "📝 跳过 setlocalversion 修改（已在伪装步骤中处理）"
+
+          # 🎭 使用环境变量中设置的编译时间戳（原厂时间: Thu May 25 12:11:12 UTC 2023）
+          # 而不是当前时间
+          if [ -n "$KBUILD_BUILD_TIMESTAMP" ]; then
+            CURRENT_TIME="$KBUILD_BUILD_TIMESTAMP"
+            echo "✅ 使用伪装的编译时间戳: $CURRENT_TIME"
+          else
+            # 如果环境变量未设置（不应该发生），使用当前时间
+            CURRENT_TIME=$(date -u +"%a %b %d %H:%M:%S UTC %Y")
+            echo "⚠️  警告: 使用当前时间戳: $CURRENT_TIME"
+          fi
 
           echo "CURRENT_TIME=$CURRENT_TIME"
           perl -pi -e "s{UTS_VERSION=\"\\\$\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $CURRENT_TIME\"}" ./common/scripts/mkcompile_h
@@ -564,17 +669,22 @@ jobs:
           if [ "${{ inputs.kernel_version }}" = "6.1" ] || [ "${{ inputs.kernel_version }}" = "6.6" ]; then
             sed -i -e "s|\$(preempt-flag-y) \"\$(build-timestamp)\"|\$(preempt-flag-y) \"$CURRENT_TIME\"|" ./common/init/Makefile
           fi
-          
+
           if [ -f "build/build.sh" ]; then
-            sed -i 's/-dirty//' ./common/scripts/setlocalversion
+            # 🎭 注释掉这行，避免覆盖我们的伪装 setlocalversion
+            # sed -i 's/-dirty//' ./common/scripts/setlocalversion
+            echo "📝 跳过 -dirty 移除（保持伪装的 setlocalversion）"
           else
             sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' ./common/BUILD.bazel
             rm -rf ./common/android/abi_gki_protected_exports_*
             sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
+            # 🎭 不再通过 CONFIG_LOCALVERSION 设置版本
+            # 版本已经在 setlocalversion 脚本中硬编码
             # sed -E -i '/^CONFIG_LOCALVERSION=/ s/(.*)"$/\1"/' ./common/arch/arm64/configs/gki_defconfig
-            if [ ! -z ${{ inputs.version }} ]; then
-              sed -i '/^CONFIG_LOCALVERSION=/ s/="\([^"]*\)"/="${{ inputs.version }}"/' ./common/arch/arm64/configs/gki_defconfig
-            fi
+            # if [ ! -z ${{ inputs.version }} ]; then
+            #   sed -i '/^CONFIG_LOCALVERSION=/ s/="\([^"]*\)"/="${{ inputs.version }}"/' ./common/arch/arm64/configs/gki_defconfig
+            # fi
+            echo "📝 跳过 CONFIG_LOCALVERSION 修改（使用 setlocalversion 脚本）"
           fi
 
       - name: Build with retry
@@ -602,7 +712,7 @@ jobs:
               tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
             fi
             ccache --show-stats
-            
+
       - name: 修补 Image 文件 安卓12和安卓13(仅限sukisu)
         if: ${{ inputs.use_kpm && inputs.kernelsu_variant == 'SukiSU' && (inputs.android_version == 'android12' || inputs.android_version == 'android13') }}
         run: |
